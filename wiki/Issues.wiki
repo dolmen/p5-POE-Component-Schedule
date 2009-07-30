@@ -1,0 +1,4 @@
+#summary How to report issues.
+#labels Featured
+
+Report POE::Component::Schedule issues on [http://rt.cpan.org/NoAuth/Bugs.html?Dist=POE-Component-Schedule rt.cpan.org].
