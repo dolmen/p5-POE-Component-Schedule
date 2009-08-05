@@ -2,10 +2,10 @@ package POE::Component::Schedule;
 
 use 5.008;
 
-our $VERSION = '0.03';
-
 use strict;
 use warnings;
+
+our $VERSION = '0.03';
 
 use POE;
 
