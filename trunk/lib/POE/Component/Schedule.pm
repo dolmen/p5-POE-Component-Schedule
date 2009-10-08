@@ -151,7 +151,7 @@ POE::Component::Schedule - Schedule POE events using DateTime::Set iterators
     use POE qw(Component::Schedule);
     use DateTime::Set;
 
-    $s1 = POE::Session->create(
+    POE::Session->create(
         inline_states => {
             _start => sub {
                 $_[HEAP]{sched} = POE::Component::Schedule->add(
@@ -173,12 +173,14 @@ POE::Component::Schedule - Schedule POE events using DateTime::Set iterators
                 $_[HEAP]{sched}->delete;
                 $_[HEAP]{sched} = undef;
                 delete $_[HEAP]{sched};
-            }
+            },
             _stop => sub {
                 print "_stop\n";
             },
         },
     );
+
+    POE::Kernel->run();
 
 =head1 DESCRIPTION
 
