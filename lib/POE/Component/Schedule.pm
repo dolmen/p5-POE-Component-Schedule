@@ -157,7 +157,7 @@ POE::Component::Schedule - Schedule POE events using DateTime::Set iterators
                 $_[HEAP]{sched} = POE::Component::Schedule->add(
                     $_[SESSION], Tick => DateTime::Set->from_recurrence(
                         after      => DateTime->now,
-                        before     => DateTime->now->add(seconds => 3)
+                        before     => DateTime->now->add(seconds => 3),
                         recurrence => sub {
                             return $_[0]->truncate( to => 'second' )->add( seconds => 1 )
                         },
