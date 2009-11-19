@@ -18,7 +18,7 @@ my $builder = Module::Build->new(
         },
     },
     requires            => {
-        'POE' => '1.003',
+        'POE' => '1.003', # A not too old version
         'DateTime' => 0,
         'DateTime::Set' => '0.25',
         'DateTime::TimeZone' => ($^O eq 'hpux' ? '0.87' : 0),
@@ -27,9 +27,6 @@ my $builder = Module::Build->new(
     },
     build_requires => {
         'Test::More' => 0,
-        #'Test::POE::Stopping' => '0.02',
-        # Author mode
-        #( -d '.svn' ? () : ()),
     },
     add_to_cleanup      => [ 'cover_db' ],
     create_makefile_pl => 'traditional',
