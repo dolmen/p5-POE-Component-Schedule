@@ -257,7 +257,7 @@ Add a set of events to the scheduler.
 Returns a schedule handle. The event is automatically deleted when the handle
 is not referenced anymore.
 
-=head2 add(I<$session>, I<$event_name>, I<$iterator>, I<@event_args>)
+=head2 new(I<$session>, I<$event_name>, I<$iterator>, I<@event_args>)
 
 C<new()> is an alias for C<add()>.
 
