@@ -1,10 +1,12 @@
 Revision history for POE-Component-Schedule
 
-0.93_02 2010-02-13T15:31 +0100    DOLMEN (Olivier Mengué)
+0.93_02 2010-02-13T16:30 +0100    DOLMEN (Olivier Mengué)
         More test coverage, but still only 92.1%. Help still welcome for
           RT#53925.
         Improved argument check for ->add() (and now, with tests too).
         POE >= 1.281 is recommended as it fixes the _child(lose) issue.
+	Updated POD: removed obsolete warnings, updated copyright.
+	Updated README: should be more helpful for distribution packagers.
 
 0.93_01 2010-02-13T01:55 +0100    DOLMEN (Olivier Mengué)
         Applied fix for RT#53925 (Patch by Zeph Gillen).
