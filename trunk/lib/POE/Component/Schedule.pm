@@ -5,7 +5,7 @@ use 5.008;
 use strict;
 use warnings;
 
-our $VERSION = '0.93_01';
+our $VERSION = '0.93_02';
 
 use POE;
 
@@ -26,6 +26,7 @@ sub PCS_ARGS      { 4 }  # Event args array
 my $refcount_counter_name = __PACKAGE__;
 
 # Scheduling session ID
+# This session is a singleton
 my $BackEndSession;
 
 # Maps tickets IDs to tickets
@@ -40,15 +41,17 @@ sub spawn {
     my %arg   = @_;
 
     if ( !defined $BackEndSession ) {
+	my %arg   = @_;
+	my $alias = $arg{Alias} || ref $class || $class;
 
         $BackEndSession = POE::Session->create(
             inline_states => {
                 _start => sub {
-                    print "# $class _start\n" if DEBUG;
+                    print "# $alias _start\n" if DEBUG;
                     my ($k) = $_[KERNEL];
 
                     $k->detach_myself;
-                    $k->alias_set( $arg{'Alias'} || $class );
+                    $k->alias_set( $alias );
                     $k->sig( 'SHUTDOWN', 'shutdown' );
                 },
 
@@ -57,7 +60,7 @@ sub spawn {
                 cancel       => \&_cancel,
 
                 shutdown => sub {
-                    print "# $class shutdown\n" if DEBUG;
+                    print "# $alias shutdown\n" if DEBUG;
                     my $k = $_[KERNEL];
 
                     # Remove all timers
@@ -72,7 +75,7 @@ sub spawn {
                     $k->sig_handled();
                 },
                 _stop => sub {
-                    print "# $class _stop\n" if DEBUG;
+                    print "# $alias _stop\n" if DEBUG;
                     $BackEndSession = undef;
                 },
             },
