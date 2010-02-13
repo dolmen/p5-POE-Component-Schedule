@@ -4,6 +4,7 @@ use 5.008;
 
 use strict;
 use warnings;
+use Carp;
 
 our $VERSION = '0.93_02';
 
@@ -38,7 +39,6 @@ my $LastTicketID = 'a'; # 'b' ... 'z', 'aa' ...
 #
 sub spawn {
     my $class = shift;
-    my %arg   = @_;
 
     if ( !defined $BackEndSession ) {
 	my %arg   = @_;
@@ -144,8 +144,12 @@ sub add {
     # Remember only the session ID
     $session = ref $session ? $session->ID : $session;
 
-    $iterator->isa('DateTime::Set')
-      or die __PACKAGE__ . "->add: third arg must be a DateTime::Set";
+    # We don't want to loose the session until the event has been handled
+    $poe_kernel->refcount_increment($session, $refcount_counter_name)
+      or croak __PACKAGE__ . "->add: first arg must be a POE session ID: $!";
+
+    ref $iterator && $iterator->isa('DateTime::Set')
+      or croak __PACKAGE__ . "->add: third arg must be a DateTime::Set";
 
     $class->spawn unless $BackEndSession;
 
@@ -157,9 +161,6 @@ sub add {
         $event,
         \@args,
     ];
-
-    # We don't want to loose the session until the event has been handled
-    $poe_kernel->refcount_increment($session, $refcount_counter_name);
 
     $poe_kernel->post( $BackEndSession, schedule => $ticket);
 
