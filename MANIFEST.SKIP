@@ -15,3 +15,5 @@
 ^a.out$
 ^MYMETA.yml$
 ^make-svn-tag.pl$
+\b90-kwalitee.t$
+Debian_CPANTS.txt$
