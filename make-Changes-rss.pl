@@ -9,6 +9,7 @@ open my $Changes, "<:utf8", "Changes";
 
 my $dist = 'POE-Component-Schedule';
 my $desc = <$Changes>;
+chomp $desc;
 
 my @releases;
 
@@ -16,7 +17,7 @@ while (<$Changes>) {
     chomp;
     next if /^$/;
 
-    if (m/^(?<version>\d+\.\d+(_\d+)?)\s+(?<date>\d{4}-\d{2}-\d{2})(?:T(?<time>\d{2}:\d{2}) ?(?<tz>Z|[+-]\d{4})?)? +(?<author_id>\w+) \((?<author_name>[^)]+)\)/) {
+    if (m/^(?<version>\d+\.\d+(_\d+)?)\s+(?<date>\d{4}-\d{2}-\d{2})(?:T(?<time>\d{2}:\d{2}) ?(?<tz>Z|[+-]\d{2}:\d{2})?)? +(?<author_id>\w+) \((?<author_name>[^)]+)\)/) {
 	push @releases, {
 	    %+,
 	    changes => [],
@@ -36,14 +37,16 @@ YAML::DumpFile("Changes.yml", \@releases);
 
 use XML::RSS;
 use DateTime;
+use DateTime::Format::W3CDTF;
+
 my $rss = XML::RSS->new(version => '1.0');
 $rss->channel(
     title => "$dist releases",
     description => $desc,
-    about => "http://search.cpan.org/dist/POE-Component-Schedule/",
+    (map { $_ => "http://search.cpan.org/dist/POE-Component-Schedule/" } qw/about link/),
     dc => {
-	date => DateTime->now(time_zone => 'local'),
-	creator => "$releases[0]{author_id}\@cpan.org",
+	date => DateTime::Format::W3CDTF->new->format_datetime(DateTime->now(time_zone => 'local')),
+	creator => "$releases[0]{author_name} <".lc($releases[0]{author_id}).'@cpan.org>',
 	language => 'en-us',
     },
     syn => {
@@ -62,7 +65,7 @@ for my $r (@releases) {
 	link => $link,
 	description => "<ul>\n".join('', map {"<li>$_</li>\n"} @{$r->{changes}}).'</ul>',
 	dc => {
-	    creator => "$r->{author_name}",
+	    creator => "$r->{author_name} <".lc($r->{author_id}).'@cpan.org>',
 	    date => "$r->{date}T$r->{time}$r->{tz}",
 	}
     );
