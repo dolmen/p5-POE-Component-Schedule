@@ -32,7 +32,8 @@ my $builder = Module::Build->new(
     build_requires => {
         'Test::More' => 0,
     },
-    add_to_cleanup      => [ 'cover_db' ],
+    # Changes.rss and Changes.yml are built from Changes
+    add_to_cleanup      => [ qw{ cover_db Changes.rss Changes.yml } ],
     create_makefile_pl => 'traditional',
 );
 
