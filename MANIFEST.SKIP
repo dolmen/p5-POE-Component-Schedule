@@ -9,7 +9,9 @@
 \.bak$
 \.old$
 \.old\.pl$
+\.log$
 \.tmp$
+\bcore$
 \B\.svn\b
 ^POE-Component-Schedule-*
 ^a.out$
