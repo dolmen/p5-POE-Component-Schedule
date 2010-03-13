@@ -1,5 +1,15 @@
 Revision history for POE-Component-Schedule
 
+0.94    2010-03-13T16:37+01:00    DOLMEN (Olivier Mengué)
+        Only minor POD changes in Schedule.pm since 0.93_02.
+        Increased dependencies versions.
+        Small tweak to the 'Changes' file format to make it more parseable
+          and generate 'Changes.yml' and 'Changes.rss'.
+	Added 'Changes.rss' and 'Changes.yml', generated from 'Changes'
+          using either 'make-Changes-rss.pl' or 'make-Changes-rss-2.pl' (see
+          SVN repo).
+        Test coverage: 92.1%.
+
 0.93_02 2010-02-13T16:30+01:00    DOLMEN (Olivier Mengué)
         More test coverage, but still only 92.1%. Help still welcome for
           RT#53925.
