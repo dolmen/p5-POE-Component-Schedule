@@ -4,6 +4,8 @@ use utf8;
 use v5.10.0;
 use strict;
 
+use DateTime;
+my $Changes_dt = DateTime->from_epoch(epoch => (stat "Changes")[9], time_zone => 'local');
 
 open my $Changes, "<:utf8", "Changes";
 
@@ -34,9 +36,9 @@ close $Changes;
 
 use YAML 0.71 ();
 YAML::DumpFile("Changes.yml", \@releases);
+utime $Changes_dt->epoch, $Changes_dt->epoch, 'Changes.yml';
 
 use XML::RSS;
-use DateTime;
 use DateTime::Format::W3CDTF;
 
 my $rss = XML::RSS->new(version => '1.0');
@@ -45,12 +47,12 @@ $rss->channel(
     description => $desc,
     (map { $_ => "http://search.cpan.org/dist/POE-Component-Schedule/" } qw/about link/),
     dc => {
-	date => DateTime::Format::W3CDTF->new->format_datetime(DateTime->now(time_zone => 'local')),
+	date => DateTime::Format::W3CDTF->new->format_datetime($Changes_dt),
 	creator => "$releases[0]{author_name} <".lc($releases[0]{author_id}).'@cpan.org>',
 	language => 'en-us',
     },
     syn => {
-	updatePeriod => 'daily',
+	updatePeriod => 'weekly',
     },
     taxo => [
 	'http://dmoz.org/Computers/Programming/Languages/Perl/'
@@ -74,3 +76,4 @@ for my $r (@releases) {
 open my $Changes_rss, '>:utf8', "Changes.rss";
 print $Changes_rss $rss->as_string;
 close $Changes_rss;
+utime $Changes_dt->epoch, $Changes_dt->epoch, 'Changes.rss';
