@@ -18,14 +18,14 @@ my $builder = Module::Build->new(
         },
     },
     requires            => {
-		# PoCoSchedule is known to work on 1.006
-		# But requiring lastest should fix most problems.
-		# And we don't have anymore the constraint that the last POE available
-		# on ActivePerl was 1.006.
-        'POE' => '1.284',
-        'DateTime' => 0,
+        # PoCoSchedule is known to work on 1.006
+        # But requiring lastest should fix most problems.
+        # And we don't have anymore the constraint that the last POE available
+        # on ActivePerl was 1.006.
+        'POE' => '1.287',
+        'DateTime' => '0.48', # Major fixes in this release
         'DateTime::Set' => '0.25',
-        'DateTime::TimeZone' => '1.10',
+        'DateTime::TimeZone' => '1.13', # Latest
         # HP-UX requires a plugin for local TZ detection
         ($^O eq 'hpux' ? ('DateTime::TimeZone::HPUX' => '1.04') : () ),
     },
