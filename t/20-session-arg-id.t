@@ -1,5 +1,11 @@
 #!/usr/local/bin/perl
 
+# Test derived from 14-session-ref-3.t
+
+# Test creating a schedule giving to P::C::S a session ID (instead of a session
+# object).
+
+
 use strict;
 use warnings;
 
@@ -18,7 +24,7 @@ POE::Session->create(
         create_schedule => sub {
             cmp_ok $_[HEAP]{count}, '>', 0, "Create schedule ".$_[HEAP]{count};
             $_[HEAP]{sched} = POE::Component::Schedule->add(
-                $_[SESSION], Tick => DateTime::Set->from_recurrence(
+                $_[SESSION]->ID, Tick => DateTime::Set->from_recurrence(
                     # Infinite set
                     after => DateTime->now,
                     recurrence => sub {
