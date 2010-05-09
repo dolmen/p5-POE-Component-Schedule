@@ -6,7 +6,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.94_90';
+our $VERSION = '0.94_01';
 
 use POE;
 

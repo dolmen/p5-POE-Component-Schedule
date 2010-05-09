@@ -1,6 +1,6 @@
 Revision history for POE-Component-Schedule
 
-0.94_90 2010-05-09T19:44+02:00    DOLMEN (Olivier Mengué)
+0.94_01 2010-05-09T19:44+02:00    DOLMEN (Olivier Mengué)
         RT#56447 fixed, but I expect to unapply the fix once RT#53714
           (allow aliases in $poe_kernel->refcount_{in,de}crement) is
           implemented. Test cases added.
