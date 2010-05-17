@@ -26,17 +26,44 @@ sub ACTION_dist
     $self->SUPER::ACTION_dist;
 }
 
-=head1 ACTIONS
 
-=over 4
+sub ACTION_tag
+{
+    my $self = shift;
 
-=item distrss
+    my $version = $self->dist_version;
+    my $tag = "release-$version";
 
-Creates 'Changes.rss' and 'Changes.yml' from 'Changes'.
+    local %ENV;
+    $ENV{LANG} = 'C';
 
-=back
+    open(my $svn_info, 'svn info|')
+	or die "Can't run 'svn info: $!'";
 
-=cut
+    my ($repo, $revision);
+
+    while (<$svn_info>) {
+	chomp;
+	/^Repository Root: (.*)$/ and $repo = $1;
+	/^Revision: (\d+)/ and $revision = $1;
+    }
+    close $svn_info;
+    die "'Repository Root' or 'Revision' not found in 'svn info' output " unless $repo && $revision;
+
+    # TODO Check if the tag already exists
+
+    print "Creating tag '$tag' from revision $revision\n";
+    my $cmd = qq|svn copy $repo/trunk $repo/tags/$tag -m "CPAN release $version from r$revision."|;
+
+    print "$cmd\n";
+    if ($self->y_n("Do it?", 'n')) {
+	system $cmd;
+    } else {
+	printf "Abort.\n";
+	return 1;
+    }
+}
+
 
 sub ACTION_distrss
 {
@@ -79,3 +106,21 @@ sub do_create_Changes_RSS
 
 1;
 __END__
+=head1 ACTIONS
+
+=over 4
+
+=item distrss
+
+Creates 'Changes.rss' and 'Changes.yml' from 'Changes'.
+
+=item tag
+
+Makes the Subversion tag for the release.
+
+=back
+
+=cut
+
+
+
