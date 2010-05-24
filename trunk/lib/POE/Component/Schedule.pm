@@ -16,11 +16,11 @@ BEGIN {
 }
 
 # Properties of a schedule ticket
-sub PCS_TIMER     { 0 }  # The POE timer
-sub PCS_ITERATOR  { 1 }  # DateTime::Set iterator
-sub PCS_SESSION   { 2 }  # POE session ID
-sub PCS_EVENT     { 3 }  # Event name
-sub PCS_ARGS      { 4 }  # Event args array
+sub PCS_TIMER    () { 0 }  # The POE timer
+sub PCS_ITERATOR () { 1 }  # DateTime::Set iterator
+sub PCS_SESSION  () { 2 }  # POE session ID
+sub PCS_EVENT    () { 3 }  # Event name
+sub PCS_ARGS     () { 4 }  # Event args array
 
 # The name of the counter attached to each session
 # We use only one counter for all timers of one session
