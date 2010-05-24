@@ -15,16 +15,18 @@ BEGIN {
     defined &DEBUG or *DEBUG = sub () { 0 };
 }
 
-# Properties of a schedule ticket
+# Private properties of a schedule ticket
 sub PCS_TIMER    () { 0 }  # The POE timer
 sub PCS_ITERATOR () { 1 }  # DateTime::Set iterator
 sub PCS_SESSION  () { 2 }  # POE session ID
 sub PCS_EVENT    () { 3 }  # Event name
 sub PCS_ARGS     () { 4 }  # Event args array
 
+# Private constant:
 # The name of the counter attached to each session
 # We use only one counter for all timers of one session
-my $refcount_counter_name = __PACKAGE__;
+# All instances of P::C::S will use the same counter for a given session
+sub REFCOUNT_COUNTER_NAME () { __PACKAGE__ }
 
 # Scheduling session ID
 # This session is a singleton
@@ -68,7 +70,7 @@ sub spawn {
                     foreach my $alarm ($k->alarm_remove_all()) {
                         my ($name, $time, $t) = @$alarm;
                         $t->[PCS_TIMER] = undef;
-                        $k->refcount_decrement($t->[PCS_SESSION], $refcount_counter_name);
+                        $k->refcount_decrement($t->[PCS_SESSION], REFCOUNT_COUNTER_NAME);
                     }
                     %Tickets = ();
 
@@ -97,7 +99,7 @@ sub _schedule {
     my $n = $t->[PCS_ITERATOR]->next;
     unless ($n) {
         # No more events, so release the session
-        $k->refcount_decrement($t->[PCS_SESSION], $refcount_counter_name);
+        $k->refcount_decrement($t->[PCS_SESSION], REFCOUNT_COUNTER_NAME);
         $t->[PCS_TIMER] = undef;
         return;
     }
@@ -126,7 +128,7 @@ sub _cancel {
 
     if (defined($t->[PCS_TIMER])) {
         $k->alarm_remove($t->[PCS_TIMER]);
-        $k->refcount_decrement($t->[PCS_SESSION], $refcount_counter_name);
+        $k->refcount_decrement($t->[PCS_SESSION], REFCOUNT_COUNTER_NAME);
         $t->[PCS_TIMER] = undef;
     }
     undef;
@@ -147,7 +149,7 @@ sub add {
     $session = $session->ID;
 
     # We don't want to loose the session until the event has been handled
-    $poe_kernel->refcount_increment($session, $refcount_counter_name) > 0
+    $poe_kernel->refcount_increment($session, REFCOUNT_COUNTER_NAME) > 0
       or croak __PACKAGE__ . "->add: first arg must be an existing POE session ID or alias: $!";
 
     ref $iterator && $iterator->isa('DateTime::Set')
