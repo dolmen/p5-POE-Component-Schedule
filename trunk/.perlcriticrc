@@ -25,7 +25,7 @@ allow_subscripts = 1
 [-ValuesAndExpressions::ProhibitMixedBooleanOperators]
 
 [Variables::ProhibitPunctuationVars]
-allow = $!
+allow = $! $^O
 
 # 'no warning' is useful, but must be restricted
 [TestingAndDebugging::ProhibitNoWarnings]
