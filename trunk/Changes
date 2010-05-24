@@ -6,8 +6,8 @@ Revision history for POE-Component-Schedule
           by perl. Should have been like that since 0.91_01. That should
           improve performance.
         Added .perlcriticrc to disable Perl::Critic policies that do not match
-          our styled (filled RT#57638, RT#57639, RT#640 for issues with
-          default policies).
+          our style (filled RT#57638, RT#57639, RT#57640, RT#57807 for issues
+          with default policies).
         Made some suggestions from Perl::Critic. Reduced number of lines, so
           improved test coverage ratio.
         Test coverage: 94.5%.
