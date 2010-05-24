@@ -16,13 +16,14 @@ Revision history for POE-Component-Schedule
           Google Code wiki area.
 
 0.94_02 2010-05-18T01:02+02:00    DOLMEN (Olivier Mengué)
-        Author build system: Changes.{rss,yml} generation is now automated in
-          the build process by extending Module::Build (see 'inc/MY/Build.pm'
-          and 'inc/MY/Build/Changes.pm').
+        Author build system: Changes.{rss,yml} generation is now automated by
+          extending Module::Build (see 'inc/MY/Build.pm' and
+          'inc/MY/Build/Changes.pm').
         Added 't/90-critic.t' to 'MANIFEST.SKIP' as it is the main cause of
           CPAN Testers failures.
-        Drop 'Makefile.PL' generation by 'Module::Build'.
-        Transformed 'make-svn-tag.pl' into a Build target (tag).
+        Author build system: Drop 'Makefile.PL' generation by Module::Build.
+        Author build system: Transformed 'make-svn-tag.pl' into a Build target
+          ('tag').
 
 0.94_01 2010-05-09T19:44+02:00    DOLMEN (Olivier Mengué)
         RT#56447 fixed, but I expect to unapply the fix once RT#57314
