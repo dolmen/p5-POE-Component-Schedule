@@ -83,7 +83,7 @@ sub spawn {
             },
         )->ID;
     }
-    $BackEndSession
+    return $BackEndSession;
 }
 
 #
@@ -105,7 +105,7 @@ sub _schedule {
     }
 
     $t->[PCS_TIMER] = $k->alarm_set( client_event => $n->epoch, $t );
-    $t;
+    return $t;
 }
 
 #
@@ -117,7 +117,7 @@ sub _client_event {
 
     $k->post( @{$t}[PCS_SESSION, PCS_EVENT], @{$t->[PCS_ARGS]} );
 
-    _schedule(@_);
+    return _schedule(@_);
 }
 
 #
@@ -131,7 +131,7 @@ sub _cancel {
         $k->refcount_decrement($t->[PCS_SESSION], REFCOUNT_COUNTER_NAME);
         $t->[PCS_TIMER] = undef;
     }
-    undef;
+    return;
 }
 
 #
@@ -176,11 +176,12 @@ sub delete {
     my $id = ${$_[0]};
     return unless exists $Tickets{$id};
     $poe_kernel->post($BackEndSession, cancel => delete $Tickets{$id});
+    return;
 }
 
 # Releasing the ticket object will delete the ressource
 sub DESTROY {
-    $_[0]->delete;
+    return $_[0]->delete;
 }
 
 {
