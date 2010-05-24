@@ -111,6 +111,15 @@ sub do_create_Changes_RSS
     #system $^X $^X, 'make-Changes-rss-2.pl';
     require inc::MY::Build::Changes;
     inc::MY::Build::Changes->build(dist_name => $self->dist_name);
+
+    # Prepare Changes.rss online distribution in the wiki of the Google Code
+    # project
+    require File::Spec;
+    my $f = File::Spec->catfile('..', $self->dist_name.".wiki", 'Changes.rss');
+    if (-e $f) {
+	require File::Copy;
+	File::Copy::syscopy('Changes.rss', $f);
+    }
 }
 
 
