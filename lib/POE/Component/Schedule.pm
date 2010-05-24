@@ -140,8 +140,7 @@ sub _cancel {
 #
 sub add {
 
-    my $class  = shift;
-    my ( $session, $event, $iterator, @args ) = @_;
+    my ( $class, $session, $event, $iterator, @args ) = @_;
 
     # Remember only the session ID
     $session = $poe_kernel->alias_resolve($session) unless ref $session;
