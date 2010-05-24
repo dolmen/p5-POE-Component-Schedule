@@ -39,11 +39,9 @@ my $LastTicketID = 'a'; # 'b' ... 'z', 'aa' ...
 #
 # crank up the schedule session
 #
-sub spawn {
-    my $class = shift;
-
+sub spawn { ## no critic (Subroutines::RequireArgUnpacking)
     if ( !defined $BackEndSession ) {
-	my %arg   = @_;
+	my ($class, %arg)   = @_;
 	my $alias = $arg{Alias} || ref $class || $class;
 
         $BackEndSession = POE::Session->create(
@@ -112,7 +110,7 @@ sub _schedule {
 # handle a client event and schedule the next one
 #  ARG0 is the schedule ticket
 #
-sub _client_event {
+sub _client_event { ## no critic (Subroutines::RequireArgUnpacking)
     my ( $k, $t ) = @_[ KERNEL, ARG0 ];
 
     $k->post( @{$t}[PCS_SESSION, PCS_EVENT], @{$t->[PCS_ARGS]} );
