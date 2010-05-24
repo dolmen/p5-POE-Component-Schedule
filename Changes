@@ -1,15 +1,16 @@
 Revision history for POE-Component-Schedule
 
-0.94_03 2010-05-25T00:00+02:00    DOLMEN (Olivier Mengué)
+0.94_03 2010-05-25T00:14+02:00    DOLMEN (Olivier Mengué)
         No functional change since 0.94_01.
         Fixed constant functions: added "()" prototype to make them inlinable
-          by perl. Should improve performance.
+          by perl. Should have been like that since 0.91_01. That should
+          improve performance.
         Added .perlcriticrc to disable Perl::Critic policies that do not match
           our styled (filled RT#57638, RT#57639, RT#640 for issues with
           default policies).
         Made some suggestions from Perl::Critic. Reduced number of lines, so
           improved test coverage ratio.
-        Test coverage: 94.1%.
+        Test coverage: 94.5%.
         Author build system: fixed the 'Build tag'.
         Author build system: improved steps to publish 'Changes.rss' in the
           Google Code wiki area.
