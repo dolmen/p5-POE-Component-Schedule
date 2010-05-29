@@ -2,56 +2,32 @@ package POE::Component::Schedule;
 
 use 5.008;
 
+our $VERSION = '0.03';
+
 use strict;
 use warnings;
-use Carp;
-
-our $VERSION = '0.95';
 
 use POE;
 
-
-BEGIN {
-    defined &DEBUG or *DEBUG = sub () { 0 };
-}
-
-# Private properties of a schedule ticket
-sub PCS_TIMER    () { 0 }  # The POE timer
-sub PCS_ITERATOR () { 1 }  # DateTime::Set iterator
-sub PCS_SESSION  () { 2 }  # POE session ID
-sub PCS_EVENT    () { 3 }  # Event name
-sub PCS_ARGS     () { 4 }  # Event args array
-
-# Private constant:
-# The name of the counter attached to each session
-# We use only one counter for all timers of one session
-# All instances of P::C::S will use the same counter for a given session
-sub REFCOUNT_COUNTER_NAME () { __PACKAGE__ }
-
-# Scheduling session ID
-# This session is a singleton
-my $BackEndSession;
-
-# Maps tickets IDs to tickets
-my %Tickets = ();
-my $LastTicketID = 'a'; # 'b' ... 'z', 'aa' ...
+my $Singleton;
+my $ID_Sequence = 'a';    # sequence is 'a', 'b', ..., 'z', 'aa', 'ab', ...
+my %Schedule_Ticket;      # Hash helps remember alarm id for cancel.
 
 #
 # crank up the schedule session
 #
-sub spawn { ## no critic (Subroutines::RequireArgUnpacking)
-    if ( !defined $BackEndSession ) {
-	my ($class, %arg)   = @_;
-	my $alias = $arg{Alias} || ref $class || $class;
+sub spawn {
+    my $class = shift;
+    my %arg   = @_;
 
-        $BackEndSession = POE::Session->create(
+    if ( !defined $Singleton ) {
+
+        $Singleton = POE::Session->create(
             inline_states => {
                 _start => sub {
-                    print "# $alias _start\n" if DEBUG;
                     my ($k) = $_[KERNEL];
 
-                    $k->detach_myself;
-                    $k->alias_set( $alias );
+                    $k->alias_set( $arg{'Alias'} || $class );
                     $k->sig( 'SHUTDOWN', 'shutdown' );
                 },
 
@@ -60,126 +36,102 @@ sub spawn { ## no critic (Subroutines::RequireArgUnpacking)
                 cancel       => \&_cancel,
 
                 shutdown => sub {
-                    print "# $alias shutdown\n" if DEBUG;
+                    #print "# $class shutdown\n";
                     my $k = $_[KERNEL];
 
-                    # Remove all timers of our session
-                    # and decrement session references
-                    foreach my $alarm ($k->alarm_remove_all()) {
-                        my ($name, $time, $t) = @$alarm;
-                        $t->[PCS_TIMER] = undef;
-                        $k->refcount_decrement($t->[PCS_SESSION], REFCOUNT_COUNTER_NAME);
-                    }
-                    %Tickets = ();
+                    # FIXME We are removing too much here!
+                    $k->alarm_remove_all();
 
                     $k->sig_handled();
                 },
                 _stop => sub {
-                    print "# $alias _stop\n" if DEBUG;
-                    $BackEndSession = undef;
+                    #print "# $class _stop\n";
+                    $Singleton = undef;
                 },
             },
         )->ID;
     }
-    return $BackEndSession;
 }
 
 #
 # schedule the next event
-#  ARG0 is the schedule ticket
+#  ARG0 is a client session,
+#  ARG1 is the client event name,
+#  ARG2 is a DateTime::Set iterator
+#  ARG3 is an schedule ticket
+#  ARG4 .. $#_ are arguments to the client event
 #
 sub _schedule {
-    my ( $k, $t ) = @_[ KERNEL, ARG0];
+    my ( $k, $s, $e, $ds, $tix, @arg ) = @_[ KERNEL, ARG0 .. $#_ ];
+    my $n;
 
     #
     # deal with DateTime::Sets that are finite
     #
-    my $n = $t->[PCS_ITERATOR]->next;
-    unless ($n) {
-        # No more events, so release the session
-        $k->refcount_decrement($t->[PCS_SESSION], REFCOUNT_COUNTER_NAME);
-        $t->[PCS_TIMER] = undef;
-        return;
-    }
+    return 1 unless ( $n = $ds->next );
 
-    $t->[PCS_TIMER] = $k->alarm_set( client_event => $n->epoch, $t );
-    return $t;
+    $Schedule_Ticket{$tix} =
+      $k->alarm_set( 'client_event', $n->epoch, $s, $e, $ds, $tix, @arg );
 }
 
 #
 # handle a client event and schedule the next one
-#  ARG0 is the schedule ticket
+#  ARG0 is a client session,
+#  ARG1 is the client event name,
+#  ARG2 is a DateTime::Set iterator
+#  ARG3 is an schedule ticket
+#  ARG4 .. $#_ are arguments to the client event
 #
-sub _client_event { ## no critic (Subroutines::RequireArgUnpacking)
-    my ( $k, $t ) = @_[ KERNEL, ARG0 ];
+sub _client_event {
+    my ( $k, $s, $e, $ds, $tix, @arg ) = @_[ KERNEL, ARG0 .. $#_ ];
 
-    $k->post( @{$t}[PCS_SESSION, PCS_EVENT], @{$t->[PCS_ARGS]} );
-
-    return _schedule(@_);
+    $k->post( $s, $e, @arg );
+    _schedule(@_);
 }
 
 #
 # cancel an alarm
 #
 sub _cancel {
-    my ( $k, $t ) = @_[ KERNEL, ARG0 ];
+    my ( $k, $id ) = @_[ KERNEL, ARG0 ];
 
-    if (defined($t->[PCS_TIMER])) {
-        $k->alarm_remove($t->[PCS_TIMER]);
-        $k->refcount_decrement($t->[PCS_SESSION], REFCOUNT_COUNTER_NAME);
-        $t->[PCS_TIMER] = undef;
-    }
-    return;
+    $k->alarm_remove($id);
 }
 
 #
-# Takes a POE::Session, an event name and a DateTime::Set
-# Returns a ticket object
+# takes a POE::Session, an event name and a DateTime::Set
 #
 sub add {
 
-    my ( $class, $session, $event, $iterator, @args ) = @_;
+    my $class  = shift;
+    my $ticket = $ID_Sequence++;    # get the next ticket;
 
-    # Remember only the session ID
-    $session = $poe_kernel->alias_resolve($session) unless ref $session;
-    defined($session) or croak __PACKAGE__ . "->add: first arg must be an existing POE session ID or alias.";
-    $session = $session->ID;
+    my ( $session, $event, $iterator, @args ) = @_;
+    $iterator->isa('DateTime::Set')
+      or die __PACKAGE__ . "->add: third arg must be a DateTime::Set";
 
-    # We don't want to loose the session until the event has been handled
-    $poe_kernel->refcount_increment($session, REFCOUNT_COUNTER_NAME) > 0
-      or croak __PACKAGE__ . "->add: first arg must be an existing POE session ID or alias: $!";
+    $class->spawn unless $Singleton;
 
-    ref $iterator && $iterator->isa('DateTime::Set')
-      or croak __PACKAGE__ . "->add: third arg must be a DateTime::Set";
+    $poe_kernel->post( $poe_kernel->ID_id_to_session($Singleton),
+        'schedule', $session, $event, $iterator, $ticket, @args, );
+    $Schedule_Ticket{$ticket} = ();
 
-    $class->spawn unless $BackEndSession;
-
-    my $id = $LastTicketID++;
-    my $ticket = $Tickets{$id} = [
-        undef, # Current alarm id
-        $iterator,
-        $session,
-        $event,
-        \@args,
-    ];
-
-    $poe_kernel->post( $BackEndSession, schedule => $ticket);
-
-    # We return a kind of smart pointer, so the schedule
-    # can be simply destroyed by releasing its object reference
-    return bless \$id, ref($class) || $class;
+    return bless \$ticket, ref $class || $class;
 }
 
 sub delete {
-    my $id = ${$_[0]};
-    return unless exists $Tickets{$id};
-    $poe_kernel->post($BackEndSession, cancel => delete $Tickets{$id});
-    return;
+    my $self   = shift;
+    my $ticket = $$self;
+
+    $poe_kernel->post(
+        $poe_kernel->ID_id_to_session($Singleton),
+        'cancel', $Schedule_Ticket{$ticket},
+    );
+    delete $Schedule_Ticket{$ticket};
 }
 
-# Releasing the ticket object will delete the ressource
 sub DESTROY {
-    return $_[0]->delete;
+    $_[0]->delete if exists $Schedule_Ticket{${$_[0]}};
 }
 
 {
@@ -199,13 +151,13 @@ POE::Component::Schedule - Schedule POE events using DateTime::Set iterators
     use POE qw(Component::Schedule);
     use DateTime::Set;
 
-    POE::Session->create(
+    $s1 = POE::Session->create(
         inline_states => {
             _start => sub {
                 $_[HEAP]{sched} = POE::Component::Schedule->add(
                     $_[SESSION], Tick => DateTime::Set->from_recurrence(
                         after      => DateTime->now,
-                        before     => DateTime->now->add(seconds => 3),
+                        before     => DateTime->now->add(seconds => 3)
                         recurrence => sub {
                             return $_[0]->truncate( to => 'second' )->add( seconds => 1 )
                         },
@@ -221,14 +173,12 @@ POE::Component::Schedule - Schedule POE events using DateTime::Set iterators
                 $_[HEAP]{sched}->delete;
                 $_[HEAP]{sched} = undef;
                 delete $_[HEAP]{sched};
-            },
+            }
             _stop => sub {
                 print "_stop\n";
             },
         },
     );
-
-    POE::Kernel->run();
 
 =head1 DESCRIPTION
 
@@ -239,35 +189,39 @@ on a schedule as defined by a DateTime::Set iterator.
 
 =head2 spawn(Alias => I<name>)
 
-Start up the PoCo::Schedule background session with the given alias. Returns
-the back-end session handle.
+No need to call this in normal use, add() and new() all crank
+one of these up if it is needed. Start up a PoCo::Schedule. Returns a
+handle that can then be added to.
 
-No need to call this in normal use, C<add()> and C<new()> all crank
-one of these up if it is needed.
-
-=head2 add(I<$session>, I<$event_name>, I<$iterator>, I<@event_args>)
+=head2 add()
 
     my $sched = POE::Component::Schedule->add(
-        $session,
+        $session_object,
         $event_name,
         $DateTime_Set_iterator,
         @event_args
     );
 
-Add a set of events to the scheduler.
+Add a set of events to the schedule. The C<$session_object> and C<$event_name> are passed
+to POE without even checking to see if they are valid and so have the same
+warnings as ->post() itself.
+C<$session_object> must be a real L<POE::Session>, not a session ID. Else session
+reference count will not be increased and the session may end before receiving all
+events.
 
-Returns a schedule handle. The event is automatically deleted when the handle
-is not referenced anymore.
+Returns a schedule handle. The event is removed from when the handle is not referenced
+anymore.
 
-=head2 new(I<$session>, I<$event_name>, I<$iterator>, I<@event_args>)
 
-C<new()> is an alias for C<add()>.
+=head2 new
+
+new is an alias for add
 
 =head1 SCHEDULE HANDLE METHODS
 
-=head2 delete()
+=head2 delete
 
-Removes a schedule using the handle returned from C<add()> or C<new()>.
+Removes a schedule using the handle returned from ->add or ->new.
 
 B<DEPRECATED>: Schedules are now automatically deleted when they are not
 referenced anymore. So just setting the container variable to C<undef> will
@@ -277,7 +231,7 @@ delete the schedule.
 
 L<POE>, L<DateTime::Set>, L<POE::Component::Cron>.
 
-=head1 SUPPORT
+=head1 BUGS
 
 You can look for information at:
 
@@ -285,41 +239,32 @@ You can look for information at:
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=POE-Component-Schedule>:
-post bug report there.
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/p/POE-Component-Schedule>:
-if you use this distibution, please add comments on your experience for other
-users.
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/POE-Component-Schedule/>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=POE-Component-Schedule>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
 L<http://annocpan.org/dist/POE-Component-Schedule>
 
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/p/POE-Component-Schedule>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/POE-Component-Schedule/>
+
 =back
 
 
-=head1 ACKNOWLEDGMENT & HISTORY
+=head1 ACKNOWLEDGMENT
 
-This module was a friendly fork of L<POE::Component::Cron> to extract the
-generic parts and isolate the Cron specific code in order to reduce
-dependencies on other CPAN modules.
-
-See L<https://rt.cpan.org/Ticket/Display.html?id=44442>.
+This module is a friendly fork of POE::Component::Cron to extract the generic
+parts and isolate the Cron specific code in order to reduce dependencies on
+other CPAN modules.
 
 The orignal author of POE::Component::Cron is Chris Fedde.
 
-POE::Component::Cron is now implemented as a class that inherits from
-POE::Component::Schedule.
-
-Most of the POE::Component::Schedule internals have since been rewritten in
-0.91_01 and we have now a complete test suite.
+See L<https://rt.cpan.org/Ticket/Display.html?id=44442>
 
 =head1 AUTHORS
 
@@ -335,9 +280,9 @@ Most of the POE::Component::Schedule internals have since been rewritten in
 
 =over 4
 
-=item Copyright E<copy> 2009-2010 Olivier MenguE<eacute>.
+=item Copyright E<copy> 2007-2008 Chris Fedde
 
-=item Copyright E<copy> 2007-2008 Chris Fedde.
+=item Copyright E<copy> 2009 Olivier MenguE<eacute>
 
 =back
 
