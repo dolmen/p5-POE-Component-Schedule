@@ -1,13 +1,3 @@
-
-POE::Component::Schedule - Schedule POE events using DateTime::Set iterators
-
-
-This perl module is a POE component that sends events to POE client sessions on
-a schedule defined by a DateTime::Set iterator.
-
-
-
-
 INSTALLATION
 
 To install this module, run the following commands:
@@ -19,7 +9,7 @@ To install this module, run the following commands:
 
 DEPENDENCIES
 
-(see META.yml for latest information)
+(see Build.PL for latest information)
 
 SUPPORT AND DOCUMENTATION
 
@@ -28,13 +18,10 @@ perldoc command.
 
     perldoc POE::Component::Schedule
 
-You can also view the documentation of the latest release online:
-
-    http://search.cpan.org/dist/POE-Component-Schedule/lib/POE/Component/Schedule.pm
 
 COPYRIGHT & LICENCE
 
-Copyright (C) 2009-2010 Olivier Mengué
+Copyright (C) 2009 Olivier Mengué
 Copyright (C) 2007-2008 Chris Fedde
 
 This library is free software; you can redistribute it and/or modify
