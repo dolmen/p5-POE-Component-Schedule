@@ -1,11 +1,11 @@
 Revision history for POE-Component-Schedule
 
-0.95    2010-05-25T22:36+02:00    DOLMEN (Olivier Mengué)
+0.95    2010-05-25T23:00+02:00    DOLMEN (Olivier Mengué)
         No changes since 0.94_03.
         Only change since 0.94 is fix for RT#56447 (allow POE aliases as target
           session ID for events).
 
-0.94_03 2010-05-25T00:14+02:00    DOLMEN (Olivier Mengué)
+0.94_03 2010-05-25T00:30+02:00    DOLMEN (Olivier Mengué)
         No functional change since 0.94_01.
         Fixed constant functions: added "()" prototype to make them inlinable
           by perl. Should have been like that since 0.91_01. That should
