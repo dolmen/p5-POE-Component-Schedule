@@ -1,0 +1,1 @@
+Report POE::Component::Schedule issues on [rt.cpan.org](http://rt.cpan.org/NoAuth/Bugs.html?Dist=POE-Component-Schedule).
